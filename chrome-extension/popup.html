@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AI UI Doctor — GOD TIER</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="brand-row">
+      <h1>AI UI Doctor <span class="ver-tag">v5.1 GOD TIER</span></h1>
+      <span id="attachBadge" class="badge off">debugger off</span>
+      <button id="adminOverlayBtn" class="icon-btn" title="Admin Overlay">👑</button>
+      <button id="settingsBtn" class="icon-btn" title="API Key Settings">⚙</button>
+    </div>
+    <div class="made-by">Made by Haley · Autonomous Master Controller · KB v8.0.0</div>
+  </header>
+
+  <!-- GLOBAL STATUS — always visible, outside any tab -->
+  <div id="status" class="status"></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- 👑 ADMIN OVERLAY PANEL                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <section id="adminOverlayPanel" class="hidden admin-panel">
+    <div class="admin-panel-header">
+      <span class="admin-panel-title">👑 ADMIN OVERLAY</span>
+      <button id="adminOverlayClose" class="tiny">✕</button>
+    </div>
+    <p class="admin-desc">Injects a persistent admin control bar directly onto the active page. Shows real-time session data, lets you inject headers, toggle admin flags, and monitor live traffic — all without leaving the page.</p>
+
+    <div class="admin-section-label">Overlay Appearance</div>
+    <div class="admin-row">
+      <label class="admin-mini-label">Position</label>
+      <select id="adminPosition">
+        <option value="top">Top Bar</option>
+        <option value="bottom" selected>Bottom Bar</option>
+        <option value="top-right">Top Right Corner</option>
+        <option value="bottom-right">Bottom Right Corner</option>
+      </select>
+    </div>
+    <div class="admin-row">
+      <label class="admin-mini-label">Theme</label>
+      <select id="adminTheme">
+        <option value="dark" selected>OLED Black (default)</option>
+        <option value="purple">Purple Haze</option>
+        <option value="red">Red Alert</option>
+        <option value="green">Matrix Green</option>
+      </select>
+    </div>
+    <div class="admin-row">
+      <label class="admin-mini-label">Opacity</label>
+      <input type="range" id="adminOpacity" min="50" max="100" value="95" style="width:100%" />
+    </div>
+
+    <div class="admin-section-label">Overlay Modules</div>
+    <div class="admin-toggles">
+      <label class="admin-toggle-row"><input type="checkbox" id="modSession" checked /> Session Monitor (JWT · cookies · storage)</label>
+      <label class="admin-toggle-row"><input type="checkbox" id="modBalance" checked /> Live Balance Watcher</label>
+      <label class="admin-toggle-row"><input type="checkbox" id="modHeaders" checked /> Header Injector</label>
+      <label class="admin-toggle-row"><input type="checkbox" id="modFlags" checked /> Admin Flag Toggler (isAdmin / isPremium)</label>
+      <label class="admin-toggle-row"><input type="checkbox" id="modNetwork" checked /> Network Monitor (XHR/fetch live log)</label>
+      <label class="admin-toggle-row"><input type="checkbox" id="modDom" /> DOM Inspector (element hover info)</label>
+    </div>
+
+    <div class="admin-section-label">Quick Admin Flags</div>
+    <div class="preset-grid" style="margin-bottom:6px">
+      <button class="admin-flag-btn" data-field="isAdmin" data-value="true">isAdmin → true</button>
+      <button class="admin-flag-btn" data-field="isPremium" data-value="true">isPremium → true</button>
+      <button class="admin-flag-btn" data-field="isStaff" data-value="true">isStaff → true</button>
+      <button class="admin-flag-btn" data-field="role" data-value='"admin"'>role → "admin"</button>
+      <button class="admin-flag-btn" data-field="plan" data-value='"enterprise"'>plan → enterprise</button>
+      <button class="admin-flag-btn" data-field="verified" data-value="true">verified → true</button>
+    </div>
+
+    <div class="row">
+      <button id="adminInjectBtn" class="primary full">👑 Inject Admin Overlay</button>
+      <button id="adminRemoveBtn" class="full">✕ Remove Overlay</button>
+    </div>
+    <div id="adminPanelStatus" class="status"></div>
+  </section>
+
+  <section id="settingsPanel" class="hidden card">
+    <label for="apiKey">OpenAI API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-..." />
+    <label for="model">Model</label>
+    <select id="model">
+      <option value="gpt-4o-mini">gpt-4o-mini (recommended — cheap &amp; fast)</option>
+      <option value="gpt-4o">gpt-4o (smarter, costs more)</option>
+      <option value="gpt-4-turbo">gpt-4-turbo</option>
+      <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+      <option value="gpt-4.1">gpt-4.1 (latest flagship)</option>
+      <option value="gpt-4.1-nano">gpt-4.1-nano (fastest &amp; cheapest)</option>
+      <option value="o4-mini">o4-mini (latest reasoning — recommended)</option>
+      <option value="o1-mini">o1-mini (reasoning)</option>
+      <option value="o3-mini">o3-mini (advanced reasoning)</option>
+    </select>
+    <label for="ollamaUrl">Local AI fallback (Ollama URL — leave empty to use OpenAI)</label>
+    <input type="text" id="ollamaUrl" placeholder="http://localhost:11434" />
+    <label for="ollamaModel">Local model name</label>
+    <input type="text" id="ollamaModel" placeholder="llama3.1" />
+    <hr style="border-color:#333;margin:10px 0" />
+    <label for="customApiUrl" style="color:#a78bfa;font-weight:700">➕ Add Your Own AI (Custom OpenAI-compatible endpoint)</label>
+    <input type="text" id="customApiUrl" placeholder="https://api.anthropic.com/v1/... or any OpenAI-compatible URL" />
+    <label for="customApiKey">Custom AI — API Key</label>
+    <input type="password" id="customApiKey" placeholder="your-custom-api-key" />
+    <label for="customModel">Custom AI — Model name</label>
+    <input type="text" id="customModel" placeholder="e.g. claude-3-5-sonnet, gemini-pro, mistral-large" />
+    <p style="font-size:11px;color:#888;margin:4px 0">Custom AI takes priority over OpenAI if URL is set. Must be OpenAI-compatible (chat/completions format).</p>
+    <button id="saveKey" class="primary">Save</button>
+  </section>
+
+  <button id="selectBtn" class="primary full">Select Element on Page</button>
+  <div id="selectedInfo" class="info hidden"></div>
+
+  <div class="tabs big-tabs">
+    <button class="tab active" data-tab="automatic">⌘ Control Center</button>
+    <button class="tab" data-tab="manual">⚙ Manual Toolbox</button>
+    <button class="tab" data-tab="terminal">▣ Live Terminal</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ⌘  CONTROL CENTER TAB                                   -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <section id="automaticTab" class="tab-panel active">
+
+    <div class="target-strip">
+      <span class="ts-label">TARGET</span>
+      <span id="tmUrl" class="ts-url">— open a website first —</span>
+      <span id="tmState" class="ts-state">idle</span>
+      <span id="tmPulse" class="tm-pulse hidden"></span>
+    </div>
+    <div id="tmBalance" class="hidden"></div>
+    <input id="tmBalanceUrl" class="hidden" />
+    <input id="tmForceValue" class="hidden" value="1000" />
+
+    <div class="ghost-bar">
+      <button id="btnGhostToggle" class="ghost-toggle">👻 Stealth Ghost: OFF</button>
+      <button id="btnVCoreView" class="ghost-toggle vcore-btn">🧠 V-Core Memory</button>
+      <button id="adminOverlayQuickBtn" class="ghost-toggle admin-quick-btn" title="Open Admin Overlay settings">👑 Admin Overlay</button>
+    </div>
+
+    <!-- MASTER SEQUENCE — full-width top priority button -->
+    <button id="btnMasterSequence" class="attack-btn master-seq full-attack">
+      <span class="ab-icon">🚀</span>
+      <span class="ab-name">MASTER SEQUENCE</span>
+      <span class="ab-desc">Scan → Ghost → Neural → Admin Overlay → DB Siphon + Price Poison — full auto chain</span>
+    </button>
+
+    <button id="btnPreScan" class="attack-btn prescan full-attack">
+      <span class="ab-icon">🔍</span>
+      <span class="ab-name">Pre-Attack Scan</span>
+      <span class="ab-desc">WAF · Headers · CORS · SQLi · IDOR — know your target first</span>
+    </button>
+
+    <div class="attack-grid">
+      <button id="btnNeuralTunnel" class="attack-btn neural">
+        <span class="ab-icon">⚡</span>
+        <span class="ab-name">Neural Tunnel</span>
+        <span class="ab-desc">Evasion → Bridge → Endpoint Inject</span>
+      </button>
+      <button id="btnSessionMirror" class="attack-btn session">
+        <span class="ab-icon">🪞</span>
+        <span class="ab-name">Session Mirror</span>
+        <span class="ab-desc">Token Sniff → Storage Inject</span>
+      </button>
+      <button id="btnPricePoison" class="attack-btn price">
+        <span class="ab-icon">☠</span>
+        <span class="ab-name">Price Poison</span>
+        <span class="ab-desc">JSON Intercept → Amount Rewrite</span>
+      </button>
+      <button id="btnGhostProtocol" class="attack-btn ghost">
+        <span class="ab-icon">👻</span>
+        <span class="ab-name">Ghost Protocol</span>
+        <span class="ab-desc">Race Condition → Payment Gate</span>
+      </button>
+      <button id="btnSchemaAudit" class="attack-btn schema">
+        <span class="ab-icon">🗄</span>
+        <span class="ab-name">Schema Auditor</span>
+        <span class="ab-desc">API leak · Sensitive key detection</span>
+      </button>
+      <button id="btnPrivEsc" class="attack-btn privesc">
+        <span class="ab-icon">🔑</span>
+        <span class="ab-name">Priv Escalator</span>
+        <span class="ab-desc">Normal token → Admin endpoint test</span>
+      </button>
+      <!-- ── NEW TOOLS ROW ── -->
+      <button id="btnAdminOverlayAtk" class="attack-btn admin-atk">
+        <span class="ab-icon">👑</span>
+        <span class="ab-name">Admin Overlay</span>
+        <span class="ab-desc">Inject HUD · Grab tokens → V-Core</span>
+      </button>
+      <button id="btnDbSiphon" class="attack-btn dbsiphon">
+        <span class="ab-icon">🗃️</span>
+        <span class="ab-name">DB Siphon</span>
+        <span class="ab-desc">Schema extract · Table dump · Key leak</span>
+      </button>
+      <button id="btnHeartbeat" class="attack-btn heartbeat-atk">
+        <span class="ab-icon">💓</span>
+        <span class="ab-name">Heartbeat Monitor</span>
+        <span class="ab-desc">Keep-alive · Neural Tunnel bridge ping</span>
+      </button>
+      <button id="btnResponseSpoofer" class="attack-btn spoofer">
+        <span class="ab-icon">🎭</span>
+        <span class="ab-name">Response Spoofer</span>
+        <span class="ab-desc">4xx/5xx → 200 OK · Bypass error blocks</span>
+      </button>
+    </div>
+
+    <div class="custom-goal-label">Custom Operation — plain English or use buttons above</div>
+    <textarea id="agentGoal" rows="3" placeholder="e.g. Find all auth tokens and test if balance can be bypassed on my site"></textarea>
+    <div class="row">
+      <button id="runAgent" class="primary full">▶ Run AI Agent</button>
+      <button id="chatAgent" class="full">Chat</button>
+    </div>
+    <button id="stopAgent" class="full hidden">■ Stop Operation</button>
+    <div id="agentProgress" class="agent-progress hidden">
+      <div id="progressFill" class="progress-fill" style="width:0%"></div>
+      <span id="progressLabel" class="progress-label">Idle</span>
+    </div>
+    <div id="heartbeatBar" class="heartbeat-bar hidden">
+      <span id="heartbeatMsg" class="heartbeat-msg">⏱ running...</span>
+    </div>
+    <div id="agentLog" class="agent-log hidden"></div>
+    <div id="followupBox" class="followup hidden">
+      <textarea id="followupInput" rows="3" placeholder="Reply or ask a follow-up..."></textarea>
+      <div class="row">
+        <button id="sendFollowup" class="primary">Send</button>
+        <button id="runFollowupGoal">Run as Goal</button>
+        <button id="clearChat">Clear</button>
+      </div>
+    </div>
+
+    <div class="live-op-terminal">
+      <div class="lot-header">
+        <span class="lot-title">⚡ LIVE OPERATION TERMINAL</span>
+        <button id="lotClear" class="tiny">Clear</button>
+        <button id="lotExpLog" class="tiny" title="View experience log">📋 Exp Log</button>
+      </div>
+      <div id="lotOutput" class="lot-output"></div>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ⚙  MANUAL TOOLBOX TAB                                   -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <section id="manualTab" class="tab-panel">
+    <p class="warn">Private extension — for auditing websites you personally own. Every tool below sends real authenticated requests with your session, just like the abuser would.</p>
+
+    <!-- ── ADMIN OVERLAY TOOL CARD ──────────────────────── -->
+    <details class="tool-card admin-tool-card" open>
+      <summary>👑 Admin Overlay — Live Page Control Panel</summary>
+      <p class="tool-help">Injects a persistent admin HUD directly onto the active website. Shows live session data (JWT, cookies, localStorage), watches live network requests, lets you toggle admin flags and inject headers — all without leaving the page.</p>
+      <div class="admin-row" style="margin-bottom:6px">
+        <label class="admin-mini-label">Position on Page</label>
+        <select id="quickAdminPosition">
+          <option value="bottom" selected>Bottom Bar</option>
+          <option value="top">Top Bar</option>
+          <option value="bottom-right">Bottom Right</option>
+          <option value="top-right">Top Right</option>
+        </select>
+        <label class="admin-mini-label" style="margin-left:8px">Theme</label>
+        <select id="quickAdminTheme">
+          <option value="dark" selected>OLED Black</option>
+          <option value="purple">Purple</option>
+          <option value="red">Red Alert</option>
+          <option value="green">Matrix</option>
+        </select>
+      </div>
+      <div class="admin-toggles" style="margin-bottom:8px">
+        <label class="admin-toggle-row"><input type="checkbox" id="qmodSession" checked /> Session Monitor (JWT / cookies / storage)</label>
+        <label class="admin-toggle-row"><input type="checkbox" id="qmodBalance" checked /> Balance Watcher (watches balance elements live)</label>
+        <label class="admin-toggle-row"><input type="checkbox" id="qmodFlags" checked /> Admin Flag Injector (isAdmin / isPremium / role)</label>
+        <label class="admin-toggle-row"><input type="checkbox" id="qmodNetwork" /> Network Log (XHR / fetch monitor)</label>
+        <label class="admin-toggle-row"><input type="checkbox" id="qmodDom" /> DOM Inspector (hover to inspect elements)</label>
+      </div>
+      <div class="row">
+        <button id="quickAdminInject" class="primary full">👑 Inject Admin Overlay Now</button>
+        <button id="quickAdminRemove" class="full">✕ Remove</button>
+      </div>
+      <div id="quickAdminStatus" class="status"></div>
+    </details>
+
+    <details class="tool-card" style="border-color:#0f72bf">
+      <summary>📦 Toolbox Quick Reference (60+ tools)</summary>
+      <div class="tool-out" style="display:block;max-height:280px;overflow:auto;font-size:11px;line-height:1.55">
+SQL Injection Tester — <b>Good:</b> Fixes DB holes. <b>Bad:</b> Steals database.<br>
+Time-Based Blind SQLi — <b>Good:</b> Catches silent SQLi. <b>Bad:</b> Extracts data via time delays.<br>
+API Endpoint Discovery — <b>Good:</b> Maps your site. <b>Bad:</b> Finds hidden admin panels.<br>
+Hidden File Scanner (.env / .git) — <b>Good:</b> Locks config files. <b>Bad:</b> Steals secrets.<br>
+JS Secret Scanner (80+ patterns) — <b>Good:</b> Secures API keys. <b>Bad:</b> Extracts AWS/Stripe/JWT/OpenAI keys from JS.<br>
+JWT &amp; Auth Token Finder — <b>Good:</b> Reviews token security. <b>Bad:</b> Steals active sessions.<br>
+JWT Auth-Bypass Tester (32 variants) — <b>Good:</b> Tests alg=none / role=admin tampering. <b>Bad:</b> Forges admin tokens.<br>
+JWT Cracker (200+ wordlist) — <b>Good:</b> Finds weak HMAC secrets. <b>Bad:</b> Cracks JWT signatures.<br>
+Session &amp; Cookie Audit — <b>Good:</b> Checks HttpOnly/Secure/SameSite. <b>Bad:</b> Hijacks logins.<br>
+WAF / CDN Detector (30+ sigs) — <b>Good:</b> Confirms edge protection. <b>Bad:</b> Picks bypass technique.<br>
+XSS Form Tester — <b>Good:</b> Tests sanitization. <b>Bad:</b> Injects scripts on real users.<br>
+DOM XSS Sink Finder — <b>Good:</b> Finds innerHTML/eval risks. <b>Bad:</b> Crafts client-side payloads.<br>
+Race Condition Tester (up to 1000 req) — <b>Good:</b> Prevents double-spend. <b>Bad:</b> Duplicates withdrawals/coupons.<br>
+Logic Flaw Tester — <b>Good:</b> Catches negative-price bugs. <b>Bad:</b> Buys items for $-1.<br>
+Balance Attack (35+ amounts) — <b>Good:</b> Tests server-side amount validation. <b>Bad:</b> Sets real balance to anything.<br>
+IDOR Tester — <b>Good:</b> Finds object-access leaks. <b>Bad:</b> Reads other users' data.<br>
+CORS Misconfig Tester — <b>Good:</b> Confirms cross-origin policy. <b>Bad:</b> Reads APIs from attacker site.<br>
+Header Manipulation — <b>Good:</b> Tests access control. <b>Bad:</b> Spoofs identity / IP.<br>
+Request Replay (X-Forwarded-For) — <b>Good:</b> Tests IP allowlists. <b>Bad:</b> Bypasses admin IP locks.<br>
+GraphQL Introspection Probe — <b>Good:</b> Locks down schema leaks. <b>Bad:</b> Maps your full API.<br>
+Rate Limit Tester — <b>Good:</b> Verifies brute-force defense. <b>Bad:</b> Mass-credential stuffing.<br>
+Subdomain Finder (200+ prefixes) — <b>Good:</b> Inventories your assets. <b>Bad:</b> Finds forgotten staging servers.<br>
+Subdomain Takeover (20+ sigs) — <b>Good:</b> Catches dangling DNS. <b>Bad:</b> Hijacks your domain via dead service.<br>
+CSRF Token Check — <b>Good:</b> Confirms anti-CSRF tokens. <b>Bad:</b> Forges actions as logged-in users.<br>
+TLS / HSTS Audit — <b>Good:</b> Forces HTTPS everywhere. <b>Bad:</b> Detects MITM downgrade opportunity.<br>
+Open Redirect Tester (60+ params) — <b>Good:</b> Blocks phishing redirects. <b>Bad:</b> Hides phish behind your domain.<br>
+Clickjacking Defense Test — <b>Good:</b> Confirms iframe blocking. <b>Bad:</b> Embeds page to steal clicks.<br>
+Security Headers Checker — <b>Good:</b> Audits CSP/HSTS/COOP/etc. <b>Bad:</b> Reveals defense gaps.<br>
+Auth-Aware Crawler (60 pages) — <b>Good:</b> Maps logged-in pages. <b>Bad:</b> Finds privileged URLs.<br>
+Mixed Content / SRI — <b>Good:</b> Closes http resources on https. <b>Bad:</b> Injects via tampered third-party JS.<br>
+Tech Fingerprint — <b>Good:</b> Inventories stack. <b>Bad:</b> Targets known CVEs for your version.<br>
+Dependency CVE Check — <b>Good:</b> Patches outdated libs. <b>Bad:</b> Lists exploits ready to use.<br>
+Prototype Pollution — <b>Good:</b> Hardens object handling. <b>Bad:</b> Escalates to RCE/auth bypass.<br>
+HTTP Smuggling Probe — <b>Good:</b> Tests proxy/server desync. <b>Bad:</b> Hijacks user requests.<br>
+WebSocket Fuzzer — <b>Good:</b> Audits realtime channels. <b>Bad:</b> Sends crafted frames to other users.<br>
+Source-Map Extractor — <b>Good:</b> Removes leaked source maps. <b>Bad:</b> Recovers original code.<br>
+Wayback &amp; URLscan Miner — <b>Good:</b> Finds forgotten endpoints. <b>Bad:</b> Discovers retired admin tools.<br>
+Hidden State Reader — <b>Good:</b> Audits frontend leaks. <b>Bad:</b> Reads cookies/storage/internal IDs.<br>
+Payload Fuzzer (10 categories) — <b>Good:</b> Stress-tests one parameter. <b>Bad:</b> Discovers untyped backends.<br>
+Disable CSP — <b>Good:</b> Tests if CSP is actually working. <b>Bad:</b> Sets up XSS injection.<br>
+Packet Poisoning — <b>Good:</b> Tests if server validates client-sent values. <b>Bad:</b> Manipulates prices/roles/quantities mid-flight.<br>
+Shadow-Bridge Berserker Mode — <b>God-Tier:</b> All 6 attack phases in one button.<br>
+<b>👑 Admin Overlay</b> — Live admin HUD injected onto the page: session monitor, balance watcher, header injector, flag toggler.
+      </div>
+    </details>
+
+    <details class="tool-card quick-ai" open>
+      <summary>⚡ Quick AI Task (use AI from Manual mode)</summary>
+      <p class="tool-help">Type any goal in plain English. The AI picks the right tools below and runs them quietly using your real session.</p>
+      <textarea id="quickAiInput" rows="4" placeholder="e.g. Set my site balance to 100, find admin pages, test free purchase bug"></textarea>
+      <button id="quickAiRun" class="primary full">Run with AI (uses all tools)</button>
+    </details>
+
+    <details class="tool-card" style="border-color:#a371f7">
+      <summary>🔥 Live Response Rewriter (Financial Logic Synchronizer)</summary>
+      <p class="tool-help">Uses chrome.debugger Fetch domain to <b>intercept every API response</b> in the active tab and rewrite values <b>before the page sees them</b>. Proves whether your site relies only on client-side state or actually re-validates on the server when you spend.</p>
+      <label>URL filter (substring; empty = all responses)</label>
+      <input id="rrFilter" placeholder="/api/wallet" />
+      <label>Regex pattern (matches in JSON body)</label>
+      <input id="rrPattern" placeholder='"balance"\s*:\s*\d+(\.\d+)?' />
+      <label>Replacement</label>
+      <input id="rrReplace" placeholder='"balance":1000' />
+      <div class="row">
+        <button id="rrStart" class="primary full">▶ Start Live Mutation</button>
+        <button id="rrStop" class="full">■ Stop</button>
+      </div>
+      <div class="row">
+        <button id="rrPreset1" class="full">Preset: balance→1000</button>
+        <button id="rrPreset2" class="full">Preset: credits→9999</button>
+        <button id="rrPreset3" class="full">Preset: isPremium→true</button>
+      </div>
+      <pre id="rrLog" class="tool-out" style="max-height:160px;overflow:auto;font-size:11px"></pre>
+    </details>
+
+    <p class="section-label">All Tools</p>
+
+    <details class="tool-card">
+      <summary>Element Fix</summary>
+      <p class="tool-help">Pick an element with "Select Element" above, then describe the change in plain English. The AI writes minimal CSS or JS, you preview live, and revert anytime.</p>
+      <textarea id="manualPrompt" rows="3" placeholder="e.g. Change this button color to blue"></textarea>
+      <button id="manualRun" class="primary full">Generate Fix</button>
+    </details>
+    <details class="tool-card">
+      <summary>Smart Page Scan</summary>
+      <p class="tool-help">Scans the whole page for broken images, overlapping text, low color contrast, and console errors. The AI suggests one CSS fix for everything found.</p>
+      <button id="autoRun" class="primary full">Run Smart Scan</button>
+    </details>
+    <details class="tool-card">
+      <summary>Chrome Debugger</summary>
+      <p class="tool-help">Attaches Chrome DevTools to the page. Captures hidden runtime exceptions, memory leaks, DOM/listener counts, and failing API calls (with request and response bodies).</p>
+      <div class="row">
+        <button id="attachBtn" class="primary">Attach</button>
+        <button id="detachBtn">Detach</button>
+      </div>
+      <div class="row"><button id="analyzeNet" class="full">Analyze Network Errors</button></div>
+      <div class="row"><button id="analyzeRuntime" class="full">Analyze Runtime + Memory</button></div>
+      <div class="row"><button id="deobfuscate" class="full">Deobfuscate Selected JS</button></div>
+      <p class="hint">Tip: attach first, then reload the page to capture startup errors.</p>
+      <div id="netList" class="net-list hidden"></div>
+    </details>
+    <details class="tool-card">
+      <summary>Hidden State Reader</summary>
+      <p class="tool-help">Shows everything hidden on the page: cookies (including HttpOnly), localStorage, sessionStorage, hidden form inputs, JSON data blocks, internal IDs, and page globals like Next.js or Redux state.</p>
+      <button id="readState" class="primary full">Read Hidden State</button>
+    </details>
+    <details class="tool-card">
+      <summary>JWT &amp; Auth Token Finder</summary>
+      <p class="tool-help">Scans cookies, storage, and hidden inputs for JWT-format tokens. Decodes the header and payload so you can check for sensitive data, weak algorithms (alg: none), or missing expiry.</p>
+      <button id="findTokens" class="primary full">Find &amp; Decode Tokens</button>
+    </details>
+    <details class="tool-card">
+      <summary>SQL Injection Tester</summary>
+      <p class="tool-help">Sends 45+ SQL injection payloads to your API endpoint and looks for 17 database error signatures (MySQL, Postgres, Oracle, SQLite, MSSQL).</p>
+      <label for="sqlUrl">Endpoint URL</label>
+      <input id="sqlUrl" placeholder="https://yoursite.com/api/items?id=1" />
+      <label for="sqlParams">Param names (comma-separated, GET only)</label>
+      <input id="sqlParams" placeholder="id,user" />
+      <label for="sqlMethod">Method</label>
+      <select id="sqlMethod"><option>GET</option><option>POST</option></select>
+      <label for="sqlBody">POST body (use <code>{{payload}}</code>)</label>
+      <textarea id="sqlBody" rows="2" placeholder='{"q":"{{payload}}"}'></textarea>
+      <button id="runSqlFuzz" class="primary full">Run SQL Fuzz</button>
+    </details>
+    <details class="tool-card">
+      <summary>XSS Form Tester</summary>
+      <p class="tool-help">Lists every form on the page. Pick one and the tool injects 12+ unique-marker XSS payloads to check if the server escapes them or lets them through.</p>
+      <button id="loadForms" class="full">List Forms</button>
+      <select id="formPick"><option value="">Pick a form</option></select>
+      <button id="runXss" class="primary full">Run XSS Test</button>
+    </details>
+    <details class="tool-card">
+      <summary>API Endpoint Discovery (Hidden Routes)</summary>
+      <p class="tool-help">Probes 400+ common hidden paths on your site — admin panels, debug endpoints, exposed config files like <code>.env</code> and <code>.git</code>, Spring Boot actuators, Swagger docs, backups, log files.</p>
+      <label for="discoverBase">Base URL (origin only)</label>
+      <input id="discoverBase" placeholder="https://your-site.com" />
+      <label class="check-row"><input type="checkbox" id="discoverDeep" /> Deep mode (~1000 paths, ~2× slower)</label>
+      <button id="runDiscover" class="primary full">Discover Hidden Endpoints</button>
+      <div id="discoverList" class="net-list hidden"></div>
+    </details>
+    <details class="tool-card">
+      <summary>Automated Payload Fuzzer (10 Categories)</summary>
+      <p class="tool-help">Sends a library of attack payloads (SQL, XSS, command injection, path traversal, SSRF, NoSQL, template injection, LDAP, SSTI, JSON proto-pollution, CRLF, Host header) to one parameter on your endpoint.</p>
+      <label for="fuzzUrl">Endpoint URL</label>
+      <input id="fuzzUrl" placeholder="https://your-site.com/api/items?id=1" />
+      <label for="fuzzCategory">Payload category</label>
+      <select id="fuzzCategory">
+        <option value="sql">SQL Injection</option>
+        <option value="xss">XSS</option>
+        <option value="cmd">Command Injection</option>
+        <option value="traversal">Path Traversal</option>
+        <option value="ssrf">SSRF</option>
+        <option value="nosql">NoSQL Injection</option>
+        <option value="template">Template Injection</option>
+        <option value="ldap">LDAP Injection</option>
+        <option value="ssti">SSTI (Server-Side Template)</option>
+        <option value="json">JSON Prototype Pollution</option>
+        <option value="crlf">CRLF Injection</option>
+        <option value="host">Host Header Injection</option>
+      </select>
+      <label for="fuzzMethod">Method</label>
+      <select id="fuzzMethod"><option>GET</option><option>POST</option></select>
+      <label for="fuzzParam">Param name (GET) or leave blank to fuzz POST body <code>{{payload}}</code></label>
+      <input id="fuzzParam" placeholder="id" />
+      <label for="fuzzBody">POST body (use <code>{{payload}}</code>)</label>
+      <textarea id="fuzzBody" rows="2" placeholder='{"q":"{{payload}}"}'></textarea>
+      <button id="runFuzz" class="primary full">Run Payload Fuzz</button>
+    </details>
+    <details class="tool-card">
+      <summary>Session &amp; Token Replay Audit</summary>
+      <p class="tool-help">Lists every cookie set on your site and checks the security flags: <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code>.</p>
+      <button id="runSessionAudit" class="primary full">Audit Session &amp; Replay</button>
+    </details>
+    <details class="tool-card">
+      <summary>Logic Flaw Tester (Price / Balance / Quantity Bypass)</summary>
+      <p class="tool-help">Sends multiple price or balance variants (negative numbers, zero, decimals, scientific notation, integer overflow, type confusion) to your purchase or balance endpoint.</p>
+      <label for="logicUrl">Endpoint URL (purchase / balance update)</label>
+      <input id="logicUrl" placeholder="https://your-site.com/api/buy" />
+      <label for="logicMethod">Method</label>
+      <select id="logicMethod"><option>POST</option><option>PUT</option><option>PATCH</option></select>
+      <label for="logicBody">Body template — use <code>{{amount}}</code> as placeholder</label>
+      <textarea id="logicBody" rows="2" placeholder='{"item":123,"amount":{{amount}}}'></textarea>
+      <button id="runLogic" class="primary full">Test Logic Flaw</button>
+    </details>
+    <details class="tool-card">
+      <summary>CORS Misconfiguration Tester</summary>
+      <p class="tool-help">Sends a request with a fake malicious <code>Origin</code> header. If your server reflects it back, any other website can read your API responses on behalf of logged-in users.</p>
+      <label for="corsUrl">URL to test</label>
+      <input id="corsUrl" placeholder="https://your-site.com/api/me" />
+      <button id="runCors" class="primary full">Test CORS</button>
+    </details>
+    <details class="tool-card">
+      <summary>Rate Limit Tester (Brute-Force Protection)</summary>
+      <p class="tool-help">Sends N rapid requests to one endpoint and reports how many succeeded before the server started blocking or returning 429. Supports up to 1000 concurrent requests.</p>
+      <label for="rateUrl">URL</label>
+      <input id="rateUrl" placeholder="https://your-site.com/api/login" />
+      <label for="rateCount">Number of requests</label>
+      <input id="rateCount" type="number" value="50" min="5" max="1000" />
+      <label for="rateMethod">Method</label>
+      <select id="rateMethod"><option>GET</option><option>POST</option></select>
+      <label for="rateBody">Body (optional)</label>
+      <textarea id="rateBody" rows="2" placeholder='{"user":"x","pass":"y"}'></textarea>
+      <button id="runRate" class="primary full">Test Rate Limit</button>
+    </details>
+    <details class="tool-card">
+      <summary>Open Redirect Tester</summary>
+      <p class="tool-help">Tries 60+ common redirect parameter names (<code>?next=</code>, <code>?url=</code>, <code>?redirect=</code>, <code>?return=</code>, and more) with a malicious target.</p>
+      <label for="redirectUrl">Base URL (a page that may redirect)</label>
+      <input id="redirectUrl" placeholder="https://your-site.com/login" />
+      <button id="runRedirect" class="primary full">Test Open Redirect</button>
+    </details>
+    <details class="tool-card">
+      <summary>Header Manipulation</summary>
+      <p class="tool-help">Add, remove, or spoof any HTTP request or response header. Rules are session-only and disappear when Chrome closes.</p>
+      <label for="hdrUrl">URL filter (substring or *)</label>
+      <input id="hdrUrl" placeholder="*" />
+      <label for="hdrName">Header name</label>
+      <input id="hdrName" placeholder="X-Test-Auth" />
+      <label for="hdrValue">Value (leave blank to remove)</label>
+      <input id="hdrValue" placeholder="bearer-token-123" />
+      <label for="hdrPhase">Apply to</label>
+      <select id="hdrPhase">
+        <option value="request-set">Set request header</option>
+        <option value="request-remove">Remove request header</option>
+        <option value="response-set">Set response header</option>
+        <option value="response-remove">Remove response header</option>
+      </select>
+      <div class="row">
+        <button id="addHdrRule" class="primary">Add Rule</button>
+        <button id="clearHdrRules">Clear All</button>
+      </div>
+      <div id="hdrList" class="net-list"></div>
+    </details>
+    <details class="tool-card">
+      <summary>Disable CSP (one-click)</summary>
+      <p class="tool-help">Strips Content-Security-Policy and X-Frame-Options headers from all responses. Useful to test whether your CSP is actually blocking attacks. Reload the page after enabling.</p>
+      <button id="disableCsp" class="primary full">Disable CSP</button>
+    </details>
+    <details class="tool-card">
+      <summary>Global CSS Refactor (AI suggestion)</summary>
+      <p class="tool-help">The AI looks at your full page structure and suggests site-wide CSS variables and improvements. Apply Live to preview, Revert to undo.</p>
+      <button id="refactorBtn" class="primary full">Suggest Global Refactor</button>
+    </details>
+    <details class="tool-card">
+      <summary>Inject Global CSS</summary>
+      <p class="tool-help">Paste raw CSS here and inject it into the current page immediately. Useful for quick visual overrides.</p>
+      <textarea id="globalVars" rows="3" placeholder=":root { --brand: #0f72bf; }&#10;body { font-size: 16px; }"></textarea>
+      <button id="injectVars" class="primary full">Inject CSS Now</button>
+    </details>
+    <details class="tool-card">
+      <summary>Script Manager</summary>
+      <p class="tool-help">List all scripts on the page. Select one to replace its content — useful to stub analytics or test behavior without the original script running.</p>
+      <button id="listScripts" class="full">List Scripts</button>
+      <div id="scriptList" class="net-list hidden"></div>
+      <label for="scriptMatch">Script matcher (index # or URL substring)</label>
+      <input id="scriptMatch" placeholder="0" />
+      <label for="scriptCode">Replacement code</label>
+      <textarea id="scriptCode" rows="3" placeholder="// new script content"></textarea>
+      <button id="replaceScript" class="primary full">Replace Script</button>
+    </details>
+    <details class="tool-card" style="border-color:#f59e0b">
+      <summary>🚨 Balance Attack (GOD TIER — 35+ amounts)</summary>
+      <p class="tool-help">Sends 35+ amount variants (negative, zero, scientific notation, type confusion, NoSQL operators, integer overflow) as real authenticated requests to your balance/purchase endpoint. Also fires 20 parallel requests to test race conditions.</p>
+      <label for="balUrl">Endpoint URL</label>
+      <input id="balUrl" placeholder="https://your-site.com/api/buy" />
+      <label for="balMethod">Method</label>
+      <select id="balMethod"><option>POST</option><option>PUT</option><option>PATCH</option></select>
+      <label for="balBody">Body template (use <code>{{amount}}</code>)</label>
+      <textarea id="balBody" rows="2" placeholder='{"amount":{{amount}},"item_id":1}'></textarea>
+      <label for="balUserField">User ID field name (for IDOR test, optional)</label>
+      <input id="balUserField" placeholder="user_id" />
+      <label for="balMyId">Your own user ID (optional)</label>
+      <input id="balMyId" placeholder="123" />
+      <label for="balOthers">Other user IDs to IDOR-test (comma-separated)</label>
+      <input id="balOthers" placeholder="1,2,999999" />
+      <button id="runBalAttack" class="primary full">⚡ Run Balance Attack</button>
+    </details>
+    <details class="tool-card" style="border-color:#f59e0b">
+      <summary>🔓 JWT Auth Bypass (32 variants)</summary>
+      <p class="tool-help">Finds JWT tokens in your storage, then forges 32 attack variants (alg=none, role=admin, kid=SQLi/SSRF/path-traversal, RS256→HS256 confusion, god-claims, PASETO confusion) and sends each as a Bearer token.</p>
+      <label for="authBypassUrl">Target URL</label>
+      <input id="authBypassUrl" placeholder="https://your-site.com/api/admin" />
+      <button id="runAuthBypass" class="primary full">🔓 Run JWT Bypass</button>
+    </details>
+    <details class="tool-card">
+      <summary>JWT Cracker (200+ wordlist)</summary>
+      <p class="tool-help">Brute-forces the HMAC-SHA256 secret key of any JWT you paste below using a 200+ entry wordlist of common secrets.</p>
+      <button id="runJwtCracker" class="primary full">🔓 Crack JWT Secrets</button>
+    </details>
+    <details class="tool-card">
+      <summary>Request Replay (Spoof IP &amp; Headers)</summary>
+      <p class="tool-help">Replay any request with custom headers and optionally a spoofed <code>X-Forwarded-For</code> IP to bypass IP allowlists and test admin-area access control.</p>
+      <label for="replayUrl">URL</label>
+      <input id="replayUrl" placeholder="https://your-site.com/api/admin" />
+      <label for="replayMethod">Method</label>
+      <select id="replayMethod"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option><option>PATCH</option></select>
+      <label for="replayHeaders">Extra headers (JSON)</label>
+      <textarea id="replayHeaders" rows="2" placeholder='{"X-Admin":"true","Authorization":"Bearer xxx"}'></textarea>
+      <label for="replayBody">Body (optional)</label>
+      <textarea id="replayBody" rows="2" placeholder='{"action":"promote"}'></textarea>
+      <label for="replayFakeIP">Fake source IP (optional)</label>
+      <input id="replayFakeIP" placeholder="127.0.0.1" />
+      <button id="runReplay" class="primary full">Replay Request</button>
+    </details>
+    <details class="tool-card">
+      <summary>Wayback &amp; URLscan Miner</summary>
+      <p class="tool-help">Queries web.archive.org and urlscan.io for every URL ever indexed for your domain. Up to 300 Wayback URLs + 200 URLscan results.</p>
+      <label for="waybackDomain">Domain</label>
+      <input id="waybackDomain" placeholder="yoursite.com" />
+      <button id="runWayback" class="primary full">Mine Historical URLs</button>
+    </details>
+    <details class="tool-card">
+      <summary>Dependency CVE Check</summary>
+      <p class="tool-help">Detects JS library versions loaded by the page and queries OSV.dev for known CVEs. Up to 12 libraries checked.</p>
+      <button id="runCveCheck" class="primary full">Check CVEs</button>
+    </details>
+    <details class="tool-card">
+      <summary>Prototype Pollution Test</summary>
+      <p class="tool-help">Injects <code>__proto__[polluted]=YES</code> and <code>constructor[prototype][polluted2]=YES</code> via URL params and checks if <code>Object.prototype</code> gets polluted in the page.</p>
+      <label for="protoUrl">URL to test</label>
+      <input id="protoUrl" placeholder="https://your-site.com/api/items" />
+      <button id="runProto" class="primary full">Test Prototype Pollution</button>
+    </details>
+    <details class="tool-card">
+      <summary>HTTP Request Smuggling</summary>
+      <p class="tool-help">Sends 4+ HTTP smuggling probes (TE:chunked + CL conflict, duplicate TE, CL:0 with second request body, duplicate Host) to detect desync vulnerabilities between your reverse proxy and backend.</p>
+      <label for="smugglingUrl">URL</label>
+      <input id="smugglingUrl" placeholder="https://your-site.com/" />
+      <button id="runSmuggling" class="primary full">Send Smuggling Probes</button>
+    </details>
+    <details class="tool-card">
+      <summary>WebSocket Fuzzer</summary>
+      <p class="tool-help">Installs a monitor on the page that logs every WebSocket frame. Then send any payload to all live connections.</p>
+      <button id="runWsSetup" class="primary full">Install WS Monitor</button>
+      <label for="wsPayload">Payload to send</label>
+      <input id="wsPayload" placeholder='{"action":"admin","role":"superuser"}' />
+      <button id="runWsSend" class="full">Send to All WS</button>
+    </details>
+    <details class="tool-card">
+      <summary>Source Map Extractor</summary>
+      <p class="tool-help">Finds <code>sourceMappingURL</code> comments in your JS files and tries to download the <code>.map</code> files. If exposed, attacker can recover your original source code.</p>
+      <button id="runSourcemap" class="primary full">Extract Source Maps</button>
+    </details>
+    <details class="tool-card">
+      <summary>Subdomain Finder (200+ prefixes)</summary>
+      <p class="tool-help">Mines Certificate Transparency (crt.sh) for all subdomains, then brute-forces 200+ common prefixes via DNS-over-HTTPS, and probes each live subdomain for its HTTP status and server.</p>
+      <label for="subDomain">Domain (apex, e.g. yoursite.com)</label>
+      <input id="subDomain" placeholder="yoursite.com" />
+      <button id="runSubFinder" class="primary full">Find Subdomains</button>
+    </details>
+    <details class="tool-card">
+      <summary>Subdomain Takeover Check</summary>
+      <p class="tool-help">Checks each subdomain found by the Subdomain Finder against 20+ dangling-service fingerprints (GitHub Pages, S3, Heroku, Vercel, Netlify, Azure, and more). Auto-uses last subdomain_finder run.</p>
+      <button id="runTakeover" class="primary full">Check Takeover</button>
+    </details>
+    <details class="tool-card">
+      <summary>WAF / CDN Detector (30+ signatures)</summary>
+      <p class="tool-help">Sends a deliberately suspicious payload and detects 30+ WAFs/CDNs including Cloudflare, AWS WAF, Akamai, Sucuri, Imperva, F5, ModSec, Wordfence, Barracuda, Fastly, Vercel, Azure Front Door, and more.</p>
+      <button id="runWaf" class="primary full">Detect WAF</button>
+    </details>
+    <details class="tool-card">
+      <summary>Blind SQLi (Time-Based)</summary>
+      <p class="tool-help">Sends 24+ time-based payloads (MySQL SLEEP, Postgres pg_sleep, MSSQL WAITFOR, Oracle DBMS_PIPE, SQLite randomblob) and measures response times to detect blind SQL injection without visible errors.</p>
+      <label for="blindUrl">URL</label>
+      <input id="blindUrl" placeholder="https://your-site.com/api/items?id=1" />
+      <label for="blindParam">Param name (GET mode; leave blank for POST)</label>
+      <input id="blindParam" placeholder="id" />
+      <label for="blindMethod">Method</label>
+      <select id="blindMethod"><option>GET</option><option>POST</option></select>
+      <label for="blindBody">POST body (use <code>{{payload}}</code>)</label>
+      <textarea id="blindBody" rows="2" placeholder='{"id":"{{payload}}"}'></textarea>
+      <button id="runBlindSqli" class="primary full">Run Blind SQLi Probe</button>
+    </details>
+    <details class="tool-card">
+      <summary>OAuth Bypass Tester</summary>
+      <p class="tool-help">Probes OAuth redirect_uri open redirect, state CSRF (sends identical state twice), and token leakage in URL fragment or query string.</p>
+      <label for="oauthUrl">Base URL (OAuth authorize endpoint or app root)</label>
+      <input id="oauthUrl" placeholder="https://your-site.com/oauth/authorize" />
+      <button id="runOauthBypass" class="primary full">🔑 Test OAuth Bypass</button>
+    </details>
+    <details class="tool-card">
+      <summary>XXE Injection (14 vectors)</summary>
+      <p class="tool-help">Sends 14 XML External Entity payloads to an XML-accepting endpoint: /etc/passwd read, win.ini, AWS metadata SSRF, GCP metadata, localhost SSRF, XInclude, PHP filter, OOB, Billion Laughs DoS, and more.</p>
+      <label for="xxeUrl">XML endpoint URL</label>
+      <input id="xxeUrl" placeholder="https://your-site.com/api/upload-xml" />
+      <label for="xxeMethod">Method</label>
+      <select id="xxeMethod"><option>POST</option><option>PUT</option></select>
+      <button id="runXxe" class="primary full">🧨 Run XXE Injection</button>
+    </details>
+    <details class="tool-card">
+      <summary>SSRF Advanced (35+ cloud metadata targets)</summary>
+      <p class="tool-help">Probes 35+ SSRF targets via your endpoint: AWS/GCP/Azure instance metadata, Docker socket, Kubernetes API, Redis, Elasticsearch, and internal service discovery.</p>
+      <label for="ssrfUrl">Endpoint URL (with a URL/path param)</label>
+      <input id="ssrfUrl" placeholder="https://your-site.com/api/fetch?url=" />
+      <label for="ssrfParam">SSRF parameter name</label>
+      <input id="ssrfParam" placeholder="url" />
+      <button id="runSsrf" class="primary full">🌐 Run SSRF Probe</button>
+    </details>
+    <details class="tool-card">
+      <summary>2FA / MFA Bypass (23 variants)</summary>
+      <p class="tool-help">Tests 23 known 2FA/MFA bypass techniques: null/empty/object/array/boolean code value, step injection, backup-code brute-force, trusted_device flag, NoSQL operator injection, and more.</p>
+      <label for="mfaBaseUrl">Base URL (site root or login page)</label>
+      <input id="mfaBaseUrl" placeholder="https://your-site.com" />
+      <label for="mfaCodeUrl">MFA endpoint URL</label>
+      <input id="mfaCodeUrl" placeholder="https://your-site.com/api/mfa/verify" />
+      <button id="runMfaBypass" class="primary full">🔓 Test 2FA Bypass</button>
+    </details>
+    <details class="tool-card">
+      <summary>DOM Monitor (Live Element Watcher)</summary>
+      <p class="tool-help">Installs a MutationObserver on the page that watches for DOM changes to balance/wallet elements in real time. Reports any changes to the Live Terminal.</p>
+      <label for="domCheckVal">Value to watch for</label>
+      <input id="domCheckVal" type="number" placeholder="1000" />
+      <button id="runDomCheck" class="primary full">Start DOM Watch</button>
+    </details>
+    <details class="tool-card">
+      <summary>Tech Fingerprint</summary>
+      <p class="tool-help">Detects server technology, framework, hosting provider, CDN, and security products from response headers and page body content.</p>
+      <label for="techFpUrl">URL (leave blank for current tab)</label>
+      <input id="techFpUrl" placeholder="https://your-site.com" />
+      <button id="runTechFp" class="primary full">Fingerprint Technology</button>
+    </details>
+    <details class="tool-card">
+      <summary>JS Secret Scanner (80+ patterns)</summary>
+      <p class="tool-help">Downloads all JS files used by the page and regex-matches against 80+ secret patterns: AWS/Google/Stripe/GitHub/Slack/OpenAI/Anthropic keys, JWTs, private keys, database URIs, and more.</p>
+      <button id="runJsScan" class="primary full">Scan JS for Secrets</button>
+    </details>
+    <details class="tool-card">
+      <summary>CSRF Token Check</summary>
+      <p class="tool-help">Lists all forms on the page and reports which POST/PUT/PATCH/DELETE forms are missing a CSRF token field.</p>
+      <button id="runCsrf" class="primary full">Check CSRF Tokens</button>
+    </details>
+    <details class="tool-card">
+      <summary>TLS / HSTS Audit</summary>
+      <p class="tool-help">Checks for HTTPS enforcement (HTTP→HTTPS redirect), HSTS header, and preload eligibility. Also checks if cookies are set with the Secure flag.</p>
+      <label for="tlsUrl">URL (leave blank for current tab)</label>
+      <input id="tlsUrl" placeholder="https://your-site.com" />
+      <button id="runTls" class="primary full">Audit TLS / HSTS</button>
+    </details>
+    <details class="tool-card">
+      <summary>Clickjacking Defense Test</summary>
+      <p class="tool-help">Checks X-Frame-Options and Content-Security-Policy frame-ancestors directive to verify the page cannot be embedded in an iframe by a malicious site.</p>
+      <label for="cjUrl">URL (leave blank for current tab)</label>
+      <input id="cjUrl" placeholder="https://your-site.com" />
+      <button id="runCj" class="primary full">Test Clickjacking Defense</button>
+    </details>
+    <details class="tool-card">
+      <summary>Security Headers Checker</summary>
+      <p class="tool-help">Audits 9 critical security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, COOP, COEP, CORP) and flags 6 server-leak headers.</p>
+      <label for="secHdrsUrl">URL (leave blank for current tab)</label>
+      <input id="secHdrsUrl" placeholder="https://your-site.com" />
+      <button id="runSecHdrs" class="primary full">Audit Security Headers</button>
+    </details>
+    <details class="tool-card">
+      <summary>IDOR Tester (Object Access)</summary>
+      <p class="tool-help">Takes a URL with a numeric ID in the path or query string, increments/decrements it by ±5 and ±10, and checks if the server returns another user's data.</p>
+      <label for="idorUrl">URL with a numeric ID</label>
+      <input id="idorUrl" placeholder="https://your-site.com/api/orders/123" />
+      <button id="runIdor" class="primary full">Test IDOR</button>
+    </details>
+    <details class="tool-card">
+      <summary>Mixed Content / SRI Audit</summary>
+      <p class="tool-help">Finds http:// resources loaded on an https:// page, and third-party scripts missing Subresource Integrity (SRI) integrity= hashes.</p>
+      <button id="runMixed" class="primary full">Audit Mixed Content &amp; SRI</button>
+    </details>
+    <details class="tool-card">
+      <summary>GraphQL Introspection Probe</summary>
+      <p class="tool-help">Probes 25+ common GraphQL paths and checks if introspection is enabled (a major schema leak). Also tries common mutation operations.</p>
+      <label for="gqlBase">Base URL (origin, leave blank for current)</label>
+      <input id="gqlBase" placeholder="https://your-site.com" />
+      <button id="runGraphql" class="primary full">Probe GraphQL</button>
+    </details>
+    <details class="tool-card">
+      <summary>Race Condition Tester</summary>
+      <p class="tool-help">Fires N parallel requests at one endpoint simultaneously to detect race conditions in claim/redeem/withdraw/transfer-style actions. Up to 1000 concurrent requests.</p>
+      <label for="raceUrl">Endpoint URL</label>
+      <input id="raceUrl" placeholder="https://your-site.com/api/redeem" />
+      <label for="raceCount">Parallel requests</label>
+      <input id="raceCount" type="number" value="20" min="2" max="1000" />
+      <label for="raceMethod">Method</label>
+      <select id="raceMethod"><option>POST</option><option>GET</option><option>PUT</option></select>
+      <label for="raceBody">Body (optional)</label>
+      <textarea id="raceBody" rows="2" placeholder='{"code":"COUPON123"}'></textarea>
+      <button id="runRace" class="primary full">Fire Race Condition</button>
+    </details>
+
+    <details class="tool-card" style="border-color:#8b0000">
+      <summary>☠️ Shadow-Bridge Berserker Mode (GOD-TIER ALL-OUT)</summary>
+      <p class="tool-help">Chains ALL 6 attack phases: SCOUT → AUTH DESTROY → DB NUKE → LOGIC ANNIHILATE → INFRA CRUSH → SECRETS DRAIN → triage → report. Use when you want a complete site audit in one click.</p>
+      <label>Target URL (leave blank for current tab)</label>
+      <input id="sbUrl" placeholder="https://your-site.com" />
+      <label>Balance endpoint (optional — for balance attack phase)</label>
+      <input id="sbBalUrl" placeholder="https://your-site.com/api/balance" />
+      <label>Balance body template (optional)</label>
+      <textarea id="sbBalBody" rows="2" placeholder='{"amount":{{amount}}}'></textarea>
+      <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+        <div id="sbPhaseIndicator" style="flex:1;font-size:11px;color:#ff6666;font-family:monospace">Status: ARMED AND READY</div>
+        <div id="sbPhaseBadge" style="padding:2px 10px;border-radius:10px;background:#330000;color:#ff4444;font-size:10px;font-weight:700;border:1px solid #660000">IDLE</div>
+      </div>
+      <div class="row">
+        <button id="sbStart" class="primary full" style="background:#8b0000;border-color:#cc0000;color:#fff;font-weight:900;letter-spacing:1px">🩸 ACTIVATE BERSERKER</button>
+        <button id="sbStop" class="full" style="color:#ff4444">■ ABORT</button>
+      </div>
+      <pre id="sbLog" class="tool-out" style="max-height:220px;overflow:auto;font-size:10px;background:#050005;color:#ff9999;border-color:#440000"></pre>
+    </details>
+
+    <details class="tool-card" style="border-color:#ef4444">
+      <summary>☠️ Packet Poisoning (Request Mutator)</summary>
+      <p class="tool-help">Intercepts every outgoing request to a target URL and <b>mutates the packet on-the-fly</b> before it reaches the server — injecting poison values into JSON body fields, query parameters, or headers.</p>
+      <label>URL filter (substring match; empty = all requests)</label>
+      <input id="ppFilter" placeholder="/api/checkout" />
+      <label>Poison mode</label>
+      <select id="ppMode">
+        <option value="json_body">JSON body field replacement</option>
+        <option value="query_param">Query parameter injection</option>
+        <option value="header_inject">Header injection</option>
+      </select>
+      <div id="ppRulesList" style="margin:4px 0"></div>
+      <div class="row">
+        <input id="ppFieldName" placeholder='Field name (e.g. "price")' style="flex:1" />
+        <input id="ppFieldValue" placeholder='Poison value (e.g. "0.01")' style="flex:1" />
+        <button id="ppAddRule" class="primary" style="white-space:nowrap">+ Add Rule</button>
+      </div>
+      <p class="hint">Quick poison presets:</p>
+      <div class="preset-grid">
+        <button class="pp-preset" data-field="price" data-value="0.01" data-mode="json_body">price → 0.01</button>
+        <button class="pp-preset" data-field="price" data-value="-999" data-mode="json_body">price → -999 💀</button>
+        <button class="pp-preset" data-field="amount" data-value="0" data-mode="json_body">amount → 0</button>
+        <button class="pp-preset" data-field="amount" data-value="-1" data-mode="json_body">amount → -1</button>
+        <button class="pp-preset" data-field="quantity" data-value="9999" data-mode="json_body">quantity → 9999</button>
+        <button class="pp-preset" data-field="quantity" data-value="-1" data-mode="json_body">quantity → -1</button>
+        <button class="pp-preset" data-field="role" data-value='"admin"' data-mode="json_body">role → "admin"</button>
+        <button class="pp-preset" data-field="role" data-value='"superuser"' data-mode="json_body">role → "superuser"</button>
+        <button class="pp-preset" data-field="discount" data-value="100" data-mode="json_body">discount → 100%</button>
+        <button class="pp-preset" data-field="user_id" data-value="1" data-mode="json_body">user_id → 1 (IDOR)</button>
+        <button class="pp-preset" data-field="is_premium" data-value="true" data-mode="json_body">is_premium → true</button>
+        <button class="pp-preset" data-field="is_admin" data-value="true" data-mode="json_body">is_admin → true</button>
+        <button class="pp-preset" data-field="is_verified" data-value="true" data-mode="json_body">is_verified → true</button>
+        <button class="pp-preset" data-field="trial_active" data-value="true" data-mode="json_body">trial_active → true</button>
+        <button class="pp-preset" data-field="subscription_tier" data-value='"enterprise"' data-mode="json_body">tier → enterprise</button>
+        <button class="pp-preset" data-field="payment_status" data-value='"paid"' data-mode="json_body">payment → paid</button>
+        <button class="pp-preset" data-field="tax" data-value="0" data-mode="json_body">tax → 0</button>
+        <button class="pp-preset" data-field="shipping_cost" data-value="0" data-mode="json_body">shipping → 0</button>
+        <button class="pp-preset" data-field="debug" data-value="true" data-mode="json_body">debug → true</button>
+        <button class="pp-preset" data-field="age" data-value="99" data-mode="json_body">age → 99</button>
+        <button class="pp-preset" data-field="coupon" data-value='"FREESHIP"' data-mode="query_param">coupon inject</button>
+        <button class="pp-preset" data-field="X-Forwarded-For" data-value="127.0.0.1" data-mode="header_inject">X-FF → 127.0.0.1</button>
+        <button class="pp-preset" data-field="X-Real-IP" data-value="10.0.0.1" data-mode="header_inject">X-Real-IP bypass</button>
+        <button class="pp-preset" data-field="X-Admin-Token" data-value="true" data-mode="header_inject">X-Admin-Token hdr</button>
+      </div>
+      <button id="ppNukeAll" style="width:100%;margin:4px 0;background:#7f1d1d;border:1px solid #ef4444;color:#fff;font-weight:900;padding:5px;border-radius:4px;cursor:pointer">☠️ NUKE ALL — Load Every Preset At Once</button>
+      <div class="row">
+        <button id="ppStart" class="primary full">☠️ Start Packet Poisoning</button>
+        <button id="ppStop" class="full">■ Stop</button>
+      </div>
+      <pre id="ppLog" class="tool-out" style="max-height:160px;overflow:auto;font-size:11px"></pre>
+    </details>
+
+    <details class="tool-card">
+      <summary>Scheduled Auto-Scan</summary>
+      <p class="tool-help">Schedules a recurring background audit of your site at a set interval. The extension will open the URL in a background tab, run the audit, and send a Chrome notification with the results.</p>
+      <label for="schedUrl">URL to scan</label>
+      <input id="schedUrl" placeholder="https://your-site.com" />
+      <label for="schedGoal">Goal (what to audit)</label>
+      <textarea id="schedGoal" rows="2" placeholder="Run a quick security audit: find tokens, check headers, detect WAF."></textarea>
+      <label for="schedInterval">Interval (minutes)</label>
+      <input id="schedInterval" type="number" value="60" min="5" />
+      <div class="row">
+        <button id="runSched" class="primary">Schedule Scan</button>
+        <button id="runSchedCancel">Cancel</button>
+      </div>
+    </details>
+
+    <div id="result" class="result hidden">
+      <div class="result-header">
+        <span id="resultLabel"></span>
+        <button id="applyFix" class="tiny primary">Apply Live</button>
+        <button id="revertFix" class="tiny">Revert All</button>
+        <button id="copyFix" class="tiny">Copy</button>
+      </div>
+      <pre id="fixCode" class="code-block"></pre>
+    </div>
+    <div class="findings-row">
+      <button id="aiTriage" class="primary">AI Triage Findings</button>
+      <button id="exportFindings">Export JSON</button>
+      <button id="runReport">Export HTML Report</button>
+      <button id="clearFindings">Clear</button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ▣  LIVE TERMINAL TAB                                    -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <section id="terminalTab" class="tab-panel">
+    <div class="term-controls">
+      <button id="silentModeBtn" class="tiny">🔇 Silent</button>
+      <button id="termClear" class="tiny">Clear</button>
+    </div>
+    <div id="terminal" class="terminal"></div>
+  </section>
+
+  <script src="knowledge.js"></script>
+  <script src="system_rules.js"></script>
+  <script src="popup.js"></script>
+  <script src="admin_overlay_popup.js"></script>
+</body>
+</html>

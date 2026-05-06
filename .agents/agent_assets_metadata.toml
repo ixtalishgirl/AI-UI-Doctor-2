@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "-Tm80PLyNcr2lizow-Lju"
+uri = "file://AI-UI-Doctor-v5.1.zip"
+type = "unspecified"
+title = "AI UI Doctor v5.1 — Chrome Extension (9 files, ready to install)"
+
+[[outputs]]
+id = "MwxlFL6Saftb7yPx5B5qR"
+uri = "file://AI-UI-Doctor-v5.2.zip"
+type = "unspecified"
+title = "AI UI Doctor v5.2 — Chrome Extension (all 9 files, ready to install)"

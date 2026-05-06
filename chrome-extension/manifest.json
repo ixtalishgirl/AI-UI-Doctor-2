@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "AI UI Doctor — GOD TIER Auditor",
+  "version": "5.2.0",
+  "description": "Made by Haley. GOD-TIER auditor — Master Sequence, DB Siphon, Admin Overlay HUD, Heartbeat Monitor, Response Spoofer, V-Core token storage, autonomous AI agent, 80+ security tools, ultra-balance rewriter, JWT cracker, OAuth bypass, XXE, SSRF, 2FA bypass, HTTP smuggling, prototype pollution, SSTI, WAF bypass, DOM monitor, WebSocket mutator, full chain aliases. OLED dark UI. Private auditing of sites you own.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage",
+    "debugger",
+    "webRequest",
+    "webNavigation",
+    "declarativeNetRequestWithHostAccess",
+    "cookies",
+    "downloads",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI UI Doctor — GOD TIER"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}
