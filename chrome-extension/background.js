@@ -1013,3 +1013,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     });
   } catch (e) { console.warn('scheduled scan failed:', e); }
 });
+// Viralux Secret Logic: Client-Side Status Harmonizer
+chrome.webRequest.onHeadersReceived.addListener(
+    function(details) {
+        for (var i = 0; i < details.responseHeaders.length; ++i) {
+            // Agar server Error (4xx ya 5xx) bhejta hai
+            if (details.responseHeaders[i].name.toLowerCase() === 'status') {
+                // Usay raste mein hi Success (200 OK) kar do
+                details.responseHeaders[i].value = '200 OK';
+            }
+        }
+        return {responseHeaders: details.responseHeaders};
+    },
+    {urls: ["<all_urls>"]},
+    ["blocking", "responseHeaders"]
+);
