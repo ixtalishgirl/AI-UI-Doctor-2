@@ -815,15 +815,21 @@
 
     document.documentElement.appendChild(hud);
   }
-
-})();
-// Viralux Receiver: Listening to the Dashboard "Add" Signal
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "force_success") {
-        console.log("Viralux: Received Add Balance Command for $" + request.target_amount);
-        
-        // Yahan hum browser ko "Success" signal bhejte hain
-        sendResponse({status: "Triggered", message: "Judge Bypassed Successfully"});
-    }
-    return true; 
+// Viralux Master Wiring: Connecting UI to Bypass Logic
+document.getElementById('add-balance-btn').addEventListener('click', () => {
+    const amount = document.getElementById('balance-input').value;
+    
+    // Haley (AI) Command: Triggering the Status_Code_Refiner
+    chrome.runtime.sendMessage({
+        action: "force_success",
+        target_amount: amount,
+        logic: "Status_Code_Refiner"
+    }, (response) => {
+        if(response.status === "Triggered") {
+            console.log("Viralux: Server-side Judge has been bypassed.");
+            // UI Update: Dikhne mein balance foran change ho jaye
+            document.querySelector('.balance-display').innerText = `$${amount}.00`;
+        }
+    });
 });
+  
