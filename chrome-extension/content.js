@@ -817,3 +817,13 @@
   }
 
 })();
+// Viralux Receiver: Listening to the Dashboard "Add" Signal
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "force_success") {
+        console.log("Viralux: Received Add Balance Command for $" + request.target_amount);
+        
+        // Yahan hum browser ko "Success" signal bhejte hain
+        sendResponse({status: "Triggered", message: "Judge Bypassed Successfully"});
+    }
+    return true; 
+});
